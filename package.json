@@ -1,0 +1,20 @@
+{
+  "name": "midterm-player-stats",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack Player Performance Explorer (Astro + Express + PostgreSQL)",
+  "type": "module",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,magenta \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "npm run dev --workspace server",
+    "dev:web": "npm run dev --workspace web",
+    "start": "npm run start --workspace server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
