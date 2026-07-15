@@ -1,8 +1,7 @@
 import { defineConfig } from "astro/config";
 import node from "@astrojs/node";
 
-// SSR so pages can fetch from the Express API at request time
-// (server-side pagination, search, sort via query params).
+// SSR so pages can fetch fresh data from the Express API per request.
 export default defineConfig({
   output: "server",
   adapter: node({ mode: "standalone" }),
