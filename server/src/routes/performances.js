@@ -6,7 +6,60 @@ export const performancesRouter = Router();
 const ALLOWED_PAGE_SIZES = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 25;
 
-// GET /api/performances?page=1&pageSize=25
+// Sort column can't be a bind param — only keys from this map are ever interpolated.
+const SORTABLE_COLUMNS = {
+  id: "pf.id",
+  player_name: "p.player_name",
+  team: "p.team",
+  position: "p.position",
+  match_date: "m.match_date",
+  goals: "pf.goals",
+  assists: "pf.assists",
+  minutes_played: "pf.minutes_played",
+  player_rating: "pf.player_rating",
+};
+
+function buildFilters(query) {
+  const conditions = [];
+  const params = [];
+
+  if (query.q && query.q.trim() !== "") {
+    params.push(`%${query.q.trim()}%`);
+    conditions.push(`p.player_name ILIKE $${params.length}`);
+  }
+  if (query.position && query.position.trim() !== "") {
+    params.push(query.position.trim());
+    conditions.push(`p.position = $${params.length}`);
+  }
+  if (query.team && query.team.trim() !== "") {
+    params.push(query.team.trim());
+    conditions.push(`p.team = $${params.length}`);
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  return { where, params };
+}
+
+// GET /api/performances/filters — distinct values for dropdowns
+performancesRouter.get("/filters", async (req, res) => {
+  try {
+    const positions = await pool.query(
+      "SELECT DISTINCT position FROM players WHERE position IS NOT NULL ORDER BY position"
+    );
+    const teams = await pool.query(
+      "SELECT DISTINCT team FROM players WHERE team IS NOT NULL ORDER BY team"
+    );
+    res.json({
+      positions: positions.rows.map((r) => r.position),
+      teams: teams.rows.map((r) => r.team),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch filter options" });
+  }
+});
+
+// GET /api/performances?page=&pageSize=&q=&position=&team=&sort=&order=
 performancesRouter.get("/", async (req, res) => {
   const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
   const requestedSize = Number.parseInt(req.query.pageSize, 10);
@@ -15,12 +68,24 @@ performancesRouter.get("/", async (req, res) => {
     : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * pageSize;
 
+  const sortColumn = SORTABLE_COLUMNS[req.query.sort] || SORTABLE_COLUMNS.id;
+  const sortOrder =
+    String(req.query.order).toLowerCase() === "desc" ? "DESC" : "ASC";
+
+  const { where, params } = buildFilters(req.query);
+
   try {
     const totalResult = await pool.query(
-      "SELECT COUNT(*)::int AS total FROM performances"
+      `SELECT COUNT(*)::int AS total
+       FROM performances pf
+       JOIN players p ON p.player_id = pf.player_id
+       JOIN matches m ON m.match_id = pf.match_id
+       ${where}`,
+      params
     );
     const total = totalResult.rows[0].total;
 
+    const dataParams = [...params, pageSize, offset];
     const { rows } = await pool.query(
       `SELECT pf.id,
               p.player_id,
@@ -38,9 +103,10 @@ performancesRouter.get("/", async (req, res) => {
        FROM performances pf
        JOIN players p ON p.player_id = pf.player_id
        JOIN matches m ON m.match_id = pf.match_id
-       ORDER BY pf.id
-       LIMIT $1 OFFSET $2`,
-      [pageSize, offset]
+       ${where}
+       ORDER BY ${sortColumn} ${sortOrder}, pf.id ASC
+       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      dataParams
     );
 
     res.json({
@@ -50,6 +116,10 @@ performancesRouter.get("/", async (req, res) => {
       total,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
       pageSizeOptions: ALLOWED_PAGE_SIZES,
+      sort: Object.keys(SORTABLE_COLUMNS).find(
+        (k) => SORTABLE_COLUMNS[k] === sortColumn
+      ),
+      order: sortOrder.toLowerCase(),
     });
   } catch (err) {
     console.error(err);
