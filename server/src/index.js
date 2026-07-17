@@ -10,12 +10,14 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 // Imported after dotenv runs so the pool sees the PG* env vars.
 const { pool } = await import("./db.js");
 const { performancesRouter } = await import("./routes/performances.js");
+const { rankingsRouter } = await import("./routes/rankings.js");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.use("/api/performances", performancesRouter);
+app.use("/api/rankings", rankingsRouter);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", service: "player-stats-api" });
