@@ -1,0 +1,89 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { API_BASE } from "../../lib/api.js";
+---
+
+<Layout title="Add Performance" active="performances">
+  <a class="back-link" href="/performances">← Back to Performances</a>
+
+  <div class="page-header">
+    <div>
+      <h2>Add Performance</h2>
+      <p>Create a new player match performance record.</p>
+    </div>
+  </div>
+
+  <form class="card" id="create-form" data-api={API_BASE}>
+    <div class="form-grid">
+      <label>
+        Player ID (required)
+        <input class="field" name="player_id" required placeholder="e.g. P00055" />
+      </label>
+      <label>
+        Match ID (required)
+        <input class="field" name="match_id" required placeholder="e.g. M00002" />
+      </label>
+      <label>
+        Opponent team
+        <input class="field" name="opponent_team" />
+      </label>
+      <label>
+        Match result (W/D/L)
+        <input class="field" name="match_result" maxlength="1" />
+      </label>
+      <label>
+        Minutes played
+        <input class="field" type="number" name="minutes_played" value="90" />
+      </label>
+      <label>
+        Goals
+        <input class="field" type="number" name="goals" value="0" />
+      </label>
+      <label>
+        Assists
+        <input class="field" type="number" name="assists" value="0" />
+      </label>
+      <label>
+        Shots
+        <input class="field" type="number" name="shots" value="0" />
+      </label>
+      <label>
+        Shots on target
+        <input class="field" type="number" name="shots_on_target" value="0" />
+      </label>
+      <label>
+        Player rating
+        <input class="field" type="number" step="0.1" name="player_rating" value="6.0" />
+      </label>
+    </div>
+    <div class="form-actions">
+      <a class="btn btn-secondary" href="/performances">Cancel</a>
+      <button class="btn btn-primary" type="submit">Create Performance</button>
+    </div>
+  </form>
+</Layout>
+
+<script>
+  const form = document.getElementById("create-form");
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const api = form.dataset.api;
+    const data = Object.fromEntries(new FormData(form).entries());
+
+    const res = await fetch(`${api}/api/performances`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      alert(body.error || "Create failed.");
+      return;
+    }
+
+    const created = await res.json();
+    window.location.href = `/performances/${created.id}`;
+  });
+</script>

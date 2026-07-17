@@ -1,0 +1,150 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { apiGet, API_BASE } from "../../lib/api.js";
+
+const { id } = Astro.params;
+let performance = null;
+let error = "";
+
+try {
+  performance = await apiGet(`/api/performances/${id}`);
+} catch (err) {
+  error = "Performance not found or API unavailable.";
+  console.error(err);
+}
+
+function initials(name = "") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() || "")
+    .join("");
+}
+---
+
+<Layout title={performance ? `Edit ${performance.player_name}` : "Edit Performance"} active="performances">
+  <a class="back-link" href="/performances">← Back to Performances</a>
+
+  <div class="page-header">
+    <div>
+      <h2>Edit Performance</h2>
+      <p>Update match stats or delete this record.</p>
+    </div>
+    {performance && (
+      <button class="btn btn-danger" type="button" id="delete-btn" data-id={performance.id}>
+        Delete
+      </button>
+    )}
+  </div>
+
+  {error && <div class="error">{error}</div>}
+
+  {performance && (
+    <>
+      <div class="card info-card">
+        <div class="player-cell">
+          <span class="avatar">{initials(performance.player_name)}</span>
+          <div>
+            <h3>{performance.player_name}</h3>
+            <div class="meta">
+              {performance.position || "—"} · {performance.team || "—"} · {performance.player_id}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="meta">Match</div>
+          <strong>{performance.team} vs {performance.opponent_team || "—"}</strong>
+          <div class="meta">{performance.match_date ? new Date(performance.match_date).toLocaleDateString() : "—"}</div>
+        </div>
+        <div>
+          <div class="meta">Stadium / Result</div>
+          <strong>{performance.stadium || "—"}</strong>
+          <div class="meta">
+            Result: {performance.match_result || "—"}
+            {performance.goals_team != null && performance.goals_opponent != null
+              ? ` ${performance.goals_team}-${performance.goals_opponent}`
+              : ""}
+          </div>
+        </div>
+      </div>
+
+      <form class="card" id="edit-form" data-api={API_BASE} data-id={performance.id}>
+        <div class="form-grid">
+          <label>
+            Opponent team
+            <input class="field" name="opponent_team" value={performance.opponent_team || ""} />
+          </label>
+          <label>
+            Match result (W/D/L)
+            <input class="field" name="match_result" maxlength="1" value={performance.match_result || ""} />
+          </label>
+          <label>
+            Minutes played
+            <input class="field" type="number" name="minutes_played" value={performance.minutes_played ?? ""} />
+          </label>
+          <label>
+            Goals
+            <input class="field" type="number" name="goals" value={performance.goals ?? 0} />
+          </label>
+          <label>
+            Assists
+            <input class="field" type="number" name="assists" value={performance.assists ?? 0} />
+          </label>
+          <label>
+            Shots
+            <input class="field" type="number" name="shots" value={performance.shots ?? 0} />
+          </label>
+          <label>
+            Shots on target
+            <input class="field" type="number" name="shots_on_target" value={performance.shots_on_target ?? 0} />
+          </label>
+          <label>
+            Player rating
+            <input class="field" type="number" step="0.1" name="player_rating" value={performance.player_rating ?? ""} />
+          </label>
+        </div>
+        <div class="form-actions">
+          <a class="btn btn-secondary" href="/performances">Cancel</a>
+          <button class="btn btn-primary" type="submit">Update Performance</button>
+        </div>
+      </form>
+    </>
+  )}
+</Layout>
+
+<script>
+  const form = document.getElementById("edit-form");
+  const deleteBtn = document.getElementById("delete-btn");
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const api = form.dataset.api;
+    const id = form.dataset.id;
+    const data = Object.fromEntries(new FormData(form).entries());
+
+    const res = await fetch(`${api}/api/performances/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      alert("Update failed.");
+      return;
+    }
+    window.location.href = `/performances/${id}`;
+  });
+
+  deleteBtn?.addEventListener("click", async () => {
+    if (!confirm("Delete this performance?")) return;
+    const id = deleteBtn.dataset.id;
+    const api = form?.dataset.api;
+    const res = await fetch(`${api}/api/performances/${id}`, { method: "DELETE" });
+    if (!res.ok && res.status !== 204) {
+      alert("Delete failed.");
+      return;
+    }
+    window.location.href = "/performances";
+  });
+</script>

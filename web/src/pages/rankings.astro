@@ -1,0 +1,113 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { apiGet } from "../lib/api.js";
+
+const sort = Astro.url.searchParams.get("sort") || "goals";
+const limit = Astro.url.searchParams.get("limit") || "25";
+
+let rankings = null;
+let error = "";
+
+try {
+  rankings = await apiGet("/api/rankings", { sort, limit });
+} catch (err) {
+  error = "Could not load rankings. Is the API running on port 3000?";
+  console.error(err);
+}
+
+function initials(name = "") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() || "")
+    .join("");
+}
+
+function ratingClass(rating) {
+  const n = Number(rating);
+  if (n >= 7) return "high";
+  if (n >= 5.5) return "mid";
+  return "low";
+}
+---
+
+<Layout title="Rankings" active="rankings">
+  <div class="page-header">
+    <div>
+      <h2>Rankings</h2>
+      <p>Top players by goals, assists, or average rating (JOIN + aggregates).</p>
+    </div>
+    <form method="get" action="/rankings" class="toolbar">
+      <label class="meta">
+        Sort by
+        <select class="select" name="sort" onchange="this.form.submit()">
+          {(rankings?.sortOptions || ["goals", "assists", "rating"]).map((opt) => (
+            <option value={opt} selected={opt === sort}>
+              {opt.charAt(0).toUpperCase() + opt.slice(1)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label class="meta">
+        Show
+        <select class="select" name="limit" onchange="this.form.submit()">
+          {[10, 25, 50, 100].map((n) => (
+            <option value={n} selected={String(n) === String(limit)}>{n}</option>
+          ))}
+        </select>
+      </label>
+    </form>
+  </div>
+
+  {error && <div class="error">{error}</div>}
+
+  <div class="card">
+    <div class="table-wrap">
+      {rankings?.data?.length ? (
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>Team</th>
+              <th>Position</th>
+              <th>Matches</th>
+              <th>Total Goals</th>
+              <th>Total Assists</th>
+              <th>Avg Rating</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rankings.data.map((row) => (
+              <tr>
+                <td><strong>{row.rank}</strong></td>
+                <td>
+                  <div class="player-cell">
+                    <span class="avatar">{initials(row.player_name)}</span>
+                    <span>
+                      <div class="player-name">{row.player_name}</div>
+                      <div class="meta">{row.nationality || row.player_id}</div>
+                    </span>
+                  </div>
+                </td>
+                <td>{row.team}</td>
+                <td>{row.position || "—"}</td>
+                <td>{row.matches_played}</td>
+                <td>{row.total_goals}</td>
+                <td>{row.total_assists}</td>
+                <td>
+                  <span class={`badge ${ratingClass(row.avg_rating)}`}>
+                    {row.avg_rating}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        !error && <div class="empty">No ranking data.</div>
+      )}
+    </div>
+  </div>
+</Layout>

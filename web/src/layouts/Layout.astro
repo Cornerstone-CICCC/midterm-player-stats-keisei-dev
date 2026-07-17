@@ -1,0 +1,36 @@
+---
+import "../styles/global.css";
+
+const { title = "Player Performance Explorer", active = "performances" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">🏆</div>
+          <h1>World Cup 2026<br />Player Performance Explorer</h1>
+        </div>
+        <nav class="nav">
+          <a href="/performances" class={active === "performances" ? "active" : ""}>
+            Performances
+          </a>
+          <a href="/rankings" class={active === "rankings" ? "active" : ""}>
+            Rankings
+          </a>
+        </nav>
+        <div class="sidebar-footer">FIFA World Cup 2026</div>
+      </aside>
+      <main class="main">
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>

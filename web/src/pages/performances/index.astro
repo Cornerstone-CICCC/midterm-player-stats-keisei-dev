@@ -1,0 +1,237 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { apiGet } from "../../lib/api.js";
+
+const url = Astro.url;
+const page = url.searchParams.get("page") || "1";
+const pageSize = url.searchParams.get("pageSize") || "25";
+const q = url.searchParams.get("q") || "";
+const position = url.searchParams.get("position") || "";
+const team = url.searchParams.get("team") || "";
+const sort = url.searchParams.get("sort") || "id";
+const order = url.searchParams.get("order") || "asc";
+
+let list = null;
+let filters = { positions: [], teams: [] };
+let error = "";
+
+try {
+  [list, filters] = await Promise.all([
+    apiGet("/api/performances", { page, pageSize, q, position, team, sort, order }),
+    apiGet("/api/performances/filters"),
+  ]);
+} catch (err) {
+  error = "Could not load performances. Is the API running on port 3000?";
+  console.error(err);
+}
+
+function initials(name = "") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() || "")
+    .join("");
+}
+
+function ratingClass(rating) {
+  const n = Number(rating);
+  if (n >= 7.5) return "high";
+  if (n >= 6.5) return "mid";
+  return "low";
+}
+
+function formatDate(value) {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function buildHref(overrides = {}) {
+  const params = new URLSearchParams({
+    page,
+    pageSize,
+    q,
+    position,
+    team,
+    sort,
+    order,
+    ...overrides,
+  });
+  for (const [k, v] of [...params.entries()]) {
+    if (!v) params.delete(k);
+  }
+  return `/performances?${params.toString()}`;
+}
+
+function sortHref(column) {
+  const nextOrder = sort === column && order === "asc" ? "desc" : "asc";
+  return buildHref({ sort: column, order: nextOrder, page: "1" });
+}
+
+const total = list?.total ?? 0;
+const currentPage = list?.page ?? 1;
+const totalPages = list?.totalPages ?? 1;
+const size = list?.pageSize ?? 25;
+const from = total === 0 ? 0 : (currentPage - 1) * size + 1;
+const to = Math.min(currentPage * size, total);
+
+const pageNumbers = [];
+const start = Math.max(1, currentPage - 2);
+const end = Math.min(totalPages, currentPage + 2);
+for (let i = start; i <= end; i++) pageNumbers.push(i);
+---
+
+<Layout title="Player Performances" active="performances">
+  <div class="page-header">
+    <div>
+      <h2>Player Performances</h2>
+      <p>Browse, search, and manage match performance records.</p>
+    </div>
+    <div class="toolbar">
+      <form method="get" action="/performances" class="toolbar">
+        <input type="hidden" name="page" value="1" />
+        <input type="hidden" name="pageSize" value={pageSize} />
+        <input type="hidden" name="position" value={position} />
+        <input type="hidden" name="team" value={team} />
+        <input type="hidden" name="sort" value={sort} />
+        <input type="hidden" name="order" value={order} />
+        <input
+          class="field search"
+          type="search"
+          name="q"
+          value={q}
+          placeholder="Search players..."
+        />
+        <button class="btn btn-secondary" type="button" id="toggle-filters">Filters</button>
+        <a class="btn btn-primary" href="/performances/new">+ Add Performance</a>
+      </form>
+    </div>
+  </div>
+
+  {error && <div class="error">{error}</div>}
+
+  <div class="card">
+    <form method="get" action="/performances" class={`filters-panel ${position || team ? "open" : ""}`} id="filters-panel">
+      <input type="hidden" name="page" value="1" />
+      <input type="hidden" name="pageSize" value={pageSize} />
+      <input type="hidden" name="q" value={q} />
+      <input type="hidden" name="sort" value={sort} />
+      <input type="hidden" name="order" value={order} />
+      <label>
+        Position
+        <select class="select" name="position">
+          <option value="">All</option>
+          {filters.positions.map((p) => (
+            <option value={p} selected={p === position}>{p}</option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Team
+        <select class="select" name="team">
+          <option value="">All</option>
+          {filters.teams.map((t) => (
+            <option value={t} selected={t === team}>{t}</option>
+          ))}
+        </select>
+      </label>
+      <button class="btn btn-primary" type="submit">Apply</button>
+      <a class="btn btn-secondary" href={buildHref({ position: "", team: "", page: "1" })}>Clear</a>
+    </form>
+
+    <div class="controls">
+      <form method="get" action="/performances">
+        <input type="hidden" name="page" value="1" />
+        <input type="hidden" name="q" value={q} />
+        <input type="hidden" name="position" value={position} />
+        <input type="hidden" name="team" value={team} />
+        <input type="hidden" name="sort" value={sort} />
+        <input type="hidden" name="order" value={order} />
+        Show
+        <select class="select" name="pageSize" onchange="this.form.submit()">
+          {(list?.pageSizeOptions || [10, 25, 50, 100]).map((n) => (
+            <option value={n} selected={String(n) === String(pageSize)}>{n}</option>
+          ))}
+        </select>
+        entries
+      </form>
+      <div>
+        {from}–{to} of {total.toLocaleString()}
+        <span class="pagination" style="margin-left: 0.75rem;">
+          {currentPage > 1 && (
+            <a class="page-link" href={buildHref({ page: String(currentPage - 1) })}>‹</a>
+          )}
+          {pageNumbers.map((n) => (
+            <a class={`page-link ${n === currentPage ? "active" : ""}`} href={buildHref({ page: String(n) })}>
+              {n}
+            </a>
+          ))}
+          {currentPage < totalPages && (
+            <a class="page-link" href={buildHref({ page: String(currentPage + 1) })}>›</a>
+          )}
+        </span>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      {list?.data?.length ? (
+        <table>
+          <thead>
+            <tr>
+              <th><a href={sortHref("player_name")}>Player</a></th>
+              <th><a href={sortHref("team")}>Team</a></th>
+              <th>Opponent</th>
+              <th><a href={sortHref("match_date")}>Match Date</a></th>
+              <th><a href={sortHref("position")}>Position</a></th>
+              <th><a href={sortHref("minutes_played")}>Min</a></th>
+              <th><a href={sortHref("goals")}>Goals</a></th>
+              <th><a href={sortHref("assists")}>Assists</a></th>
+              <th><a href={sortHref("player_rating")}>Rating</a></th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.data.map((row) => (
+              <tr>
+                <td>
+                  <a href={`/performances/${row.id}`} class="player-cell">
+                    <span class="avatar">{initials(row.player_name)}</span>
+                    <span>
+                      <div class="player-name">{row.player_name}</div>
+                      <div class="meta">{row.player_id}</div>
+                    </span>
+                  </a>
+                </td>
+                <td>{row.team}</td>
+                <td>{row.opponent_team || "—"}</td>
+                <td>{formatDate(row.match_date)}</td>
+                <td>{row.position || "—"}</td>
+                <td>{row.minutes_played ?? "—"}</td>
+                <td>{row.goals ?? 0}</td>
+                <td>{row.assists ?? 0}</td>
+                <td>
+                  <span class={`badge ${ratingClass(row.player_rating)}`}>
+                    {row.player_rating ?? "—"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        !error && <div class="empty">No performances found.</div>
+      )}
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const toggle = document.getElementById("toggle-filters");
+  const panel = document.getElementById("filters-panel");
+  toggle?.addEventListener("click", () => {
+    panel?.classList.toggle("open");
+  });
+</script>

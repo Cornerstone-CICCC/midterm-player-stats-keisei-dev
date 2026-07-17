@@ -6,4 +6,6 @@ export default defineConfig({
   output: "server",
   adapter: node({ mode: "standalone" }),
   server: { port: 4321 },
+  // Load PUBLIC_* vars from the repository root .env
+  vite: { envDir: ".." },
 });
