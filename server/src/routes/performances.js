@@ -40,6 +40,29 @@ function buildFilters(query) {
   return { where, params };
 }
 
+const EDITABLE_FIELDS = [
+  "opponent_team",
+  "match_result",
+  "minutes_played",
+  "goals",
+  "assists",
+  "shots",
+  "shots_on_target",
+  "player_rating",
+];
+
+function pickEditable(body) {
+  const fields = [];
+  const values = [];
+  for (const key of EDITABLE_FIELDS) {
+    if (body[key] !== undefined) {
+      fields.push(key);
+      values.push(body[key] === "" ? null : body[key]);
+    }
+  }
+  return { fields, values };
+}
+
 // GET /api/performances/filters — distinct values for dropdowns
 performancesRouter.get("/filters", async (req, res) => {
   try {
@@ -124,5 +147,119 @@ performancesRouter.get("/", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch performances" });
+  }
+});
+
+// GET /api/performances/:id
+performancesRouter.get("/:id", async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: "Invalid id" });
+  }
+  try {
+    const { rows } = await pool.query(
+      `SELECT pf.*,
+              p.player_name, p.age, p.nationality, p.team, p.position,
+              p.jersey_number, p.club_name,
+              m.match_date, m.stadium, m.city, m.tournament_stage
+       FROM performances pf
+       JOIN players p ON p.player_id = pf.player_id
+       JOIN matches m ON m.match_id = pf.match_id
+       WHERE pf.id = $1`,
+      [id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Performance not found" });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch performance" });
+  }
+});
+
+// POST /api/performances
+performancesRouter.post("/", async (req, res) => {
+  const { player_id, match_id } = req.body;
+  if (!player_id || !match_id) {
+    return res.status(400).json({ error: "player_id and match_id are required" });
+  }
+
+  const { fields, values } = pickEditable(req.body);
+  const columns = ["player_id", "match_id", ...fields];
+  const allValues = [player_id, match_id, ...values];
+  const placeholders = allValues.map((_, i) => `$${i + 1}`);
+
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO performances (${columns.join(", ")})
+       VALUES (${placeholders.join(", ")})
+       RETURNING *`,
+      allValues
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    if (err.code === "23503") {
+      return res.status(400).json({ error: "Unknown player_id or match_id" });
+    }
+    if (err.code === "23505") {
+      return res
+        .status(409)
+        .json({ error: "This player already has a row for that match" });
+    }
+    console.error(err);
+    res.status(500).json({ error: "Failed to create performance" });
+  }
+});
+
+// PUT /api/performances/:id
+performancesRouter.put("/:id", async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: "Invalid id" });
+  }
+
+  const { fields, values } = pickEditable(req.body);
+  if (fields.length === 0) {
+    return res.status(400).json({ error: "No editable fields provided" });
+  }
+
+  const assignments = fields.map((f, i) => `${f} = $${i + 1}`);
+  try {
+    const { rows } = await pool.query(
+      `UPDATE performances
+       SET ${assignments.join(", ")}
+       WHERE id = $${fields.length + 1}
+       RETURNING *`,
+      [...values, id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Performance not found" });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update performance" });
+  }
+});
+
+// DELETE /api/performances/:id
+performancesRouter.delete("/:id", async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: "Invalid id" });
+  }
+  try {
+    const { rowCount } = await pool.query(
+      "DELETE FROM performances WHERE id = $1",
+      [id]
+    );
+    if (rowCount === 0) {
+      return res.status(404).json({ error: "Performance not found" });
+    }
+    res.status(204).end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete performance" });
   }
 });
