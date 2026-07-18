@@ -114,6 +114,26 @@ function initials(name = "") {
 </Layout>
 
 <script>
+  const NUMERIC_FIELDS = [
+    "minutes_played",
+    "goals",
+    "assists",
+    "shots",
+    "shots_on_target",
+    "player_rating",
+  ];
+
+  function formToPayload(form) {
+    const raw = Object.fromEntries(new FormData(form).entries());
+    const data = { ...raw };
+    for (const key of NUMERIC_FIELDS) {
+      if (data[key] === undefined || data[key] === "") continue;
+      const n = Number(data[key]);
+      data[key] = Number.isFinite(n) ? n : data[key];
+    }
+    return data;
+  }
+
   const form = document.getElementById("edit-form");
   const deleteBtn = document.getElementById("delete-btn");
 
@@ -121,7 +141,7 @@ function initials(name = "") {
     event.preventDefault();
     const api = form.dataset.api;
     const id = form.dataset.id;
-    const data = Object.fromEntries(new FormData(form).entries());
+    const data = formToPayload(form);
 
     const res = await fetch(`${api}/api/performances/${id}`, {
       method: "PUT",

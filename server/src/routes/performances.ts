@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request } from "express";
-import { pool } from "../db.js";
+import { query } from "../db.js";
 
 export const performancesRouter = Router();
 
@@ -83,10 +83,10 @@ function isPgError(err: unknown): err is { code?: string } {
 // GET /api/performances/filters
 performancesRouter.get("/filters", async (_req, res) => {
   try {
-    const positions = await pool.query<{ position: string }>(
+    const positions = await query<{ position: string }>(
       "SELECT DISTINCT position FROM players WHERE position IS NOT NULL ORDER BY position"
     );
-    const teams = await pool.query<{ team: string }>(
+    const teams = await query<{ team: string }>(
       "SELECT DISTINCT team FROM players WHERE team IS NOT NULL ORDER BY team"
     );
     res.json({
@@ -118,7 +118,7 @@ performancesRouter.get("/", async (req, res) => {
   const { where, params } = buildFilters(req.query);
 
   try {
-    const totalResult = await pool.query<{ total: number }>(
+    const totalResult = await query<{ total: number }>(
       `SELECT COUNT(*)::int AS total
        FROM performances pf
        JOIN players p ON p.player_id = pf.player_id
@@ -129,7 +129,7 @@ performancesRouter.get("/", async (req, res) => {
     const total = totalResult.rows[0].total;
 
     const dataParams = [...params, pageSize, offset];
-    const { rows } = await pool.query(
+    const { rows } = await query(
       `SELECT pf.id,
               p.player_id,
               p.player_name,
@@ -175,7 +175,7 @@ performancesRouter.get("/:id", async (req, res) => {
     return res.status(400).json({ error: "Invalid id" });
   }
   try {
-    const { rows } = await pool.query(
+    const { rows } = await query(
       `SELECT pf.*,
               p.player_name, p.age, p.nationality, p.team, p.position,
               p.jersey_number, p.club_name,
@@ -212,7 +212,7 @@ performancesRouter.post("/", async (req, res) => {
   const placeholders = allValues.map((_, i) => `$${i + 1}`);
 
   try {
-    const { rows } = await pool.query(
+    const { rows } = await query(
       `INSERT INTO performances (${columns.join(", ")})
        VALUES (${placeholders.join(", ")})
        RETURNING *`,
@@ -247,7 +247,7 @@ performancesRouter.put("/:id", async (req, res) => {
 
   const assignments = fields.map((f, i) => `${f} = $${i + 1}`);
   try {
-    const { rows } = await pool.query(
+    const { rows } = await query(
       `UPDATE performances
        SET ${assignments.join(", ")}
        WHERE id = $${fields.length + 1}
@@ -271,7 +271,7 @@ performancesRouter.delete("/:id", async (req, res) => {
     return res.status(400).json({ error: "Invalid id" });
   }
   try {
-    const { rowCount } = await pool.query(
+    const { rowCount } = await query(
       "DELETE FROM performances WHERE id = $1",
       [id]
     );

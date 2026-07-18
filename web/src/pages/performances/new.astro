@@ -13,6 +13,12 @@ import { API_BASE } from "../../lib/api.js";
     </div>
   </div>
 
+  <p class="meta" style="margin: 0 0 1rem;">
+    Use an existing <code>player_id</code> and <code>match_id</code> from the database
+    (for example <code>P00055</code> + a match the player does not already have).
+    Unknown IDs or duplicates will return an error.
+  </p>
+
   <form class="card" id="create-form" data-api={API_BASE}>
     <div class="form-grid">
       <label>
@@ -64,12 +70,32 @@ import { API_BASE } from "../../lib/api.js";
 </Layout>
 
 <script>
+  const NUMERIC_FIELDS = [
+    "minutes_played",
+    "goals",
+    "assists",
+    "shots",
+    "shots_on_target",
+    "player_rating",
+  ];
+
+  function formToPayload(form) {
+    const raw = Object.fromEntries(new FormData(form).entries());
+    const data = { ...raw };
+    for (const key of NUMERIC_FIELDS) {
+      if (data[key] === undefined || data[key] === "") continue;
+      const n = Number(data[key]);
+      data[key] = Number.isFinite(n) ? n : data[key];
+    }
+    return data;
+  }
+
   const form = document.getElementById("create-form");
 
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const api = form.dataset.api;
-    const data = Object.fromEntries(new FormData(form).entries());
+    const data = formToPayload(form);
 
     const res = await fetch(`${api}/api/performances`, {
       method: "POST",

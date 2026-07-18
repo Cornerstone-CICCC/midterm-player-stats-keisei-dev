@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request } from "express";
-import { pool } from "../db.js";
+import { query } from "../db.js";
 
 export const rankingsRouter = Router();
 
@@ -31,7 +31,8 @@ rankingsRouter.get("/", async (req: Request, res) => {
   if (limit > MAX_LIMIT) limit = MAX_LIMIT;
 
   try {
-    const { rows } = await pool.query(
+    // Avg rating ignores bench/unused rows (minutes_played = 0).
+    const { rows } = await query(
       `SELECT p.player_id,
               p.player_name,
               p.team,
@@ -40,11 +41,14 @@ rankingsRouter.get("/", async (req: Request, res) => {
               COUNT(pf.id)::int                    AS matches_played,
               COALESCE(SUM(pf.goals), 0)::int      AS total_goals,
               COALESCE(SUM(pf.assists), 0)::int    AS total_assists,
-              ROUND(AVG(pf.player_rating), 2)      AS avg_rating
+              ROUND(
+                AVG(pf.player_rating) FILTER (WHERE pf.minutes_played > 0),
+                2
+              )                                    AS avg_rating
        FROM players p
        JOIN performances pf ON pf.player_id = p.player_id
        GROUP BY p.player_id, p.player_name, p.team, p.position, p.nationality
-       ORDER BY ${sortColumn} DESC, p.player_name ASC
+       ORDER BY ${sortColumn} DESC NULLS LAST, p.player_name ASC
        LIMIT $1`,
       [limit]
     );

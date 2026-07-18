@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 // Imported after dotenv runs so the pool sees the PG* env vars.
-const { pool } = await import("./db.js");
+const { query } = await import("./db.js");
 const { performancesRouter } = await import("./routes/performances.js");
 const { rankingsRouter } = await import("./routes/rankings.js");
 
@@ -25,7 +25,7 @@ app.get("/api/health", (_req, res) => {
 
 app.get("/api/health/db", async (_req, res) => {
   try {
-    const { rows } = await pool.query<{
+    const { rows } = await query<{
       players: string;
       matches: string;
       performances: string;
