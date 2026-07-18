@@ -1,0 +1,70 @@
+<!doctype html><html><head><meta charset="utf-8"><title>performances</title>
+<style>
+  body{font-family:ui-monospace,Menlo,monospace;padding:32px;background:#f8fafc;color:#0f172a}
+  h1{margin:0 0 8px;font-size:28px}
+  p{margin:0 0 20px;color:#334155;font-size:14px}
+  table{border-collapse:collapse;width:100%;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+  th,td{border:1px solid #cbd5e1;padding:8px 12px;text-align:left;font-size:13px}
+  th{background:#0f2744;color:#fff}
+  tr:nth-child(even){background:#f1f5f9}
+</style></head><body>
+<h1>Table: performances</h1>
+<p>PK: id · FK player_id → players · FK match_id → matches · UNIQUE(player_id, match_id)</p>
+<table><thead><tr><th>Column</th><th>Type</th><th>Nullable</th></tr></thead>
+<tbody><tr><td>id</td><td>integer</td><td>NOT NULL</td></tr>
+<tr><td>player_id</td><td>text</td><td>NOT NULL</td></tr>
+<tr><td>match_id</td><td>text</td><td>NOT NULL</td></tr>
+<tr><td>opponent_team</td><td>text</td><td></td></tr>
+<tr><td>match_result</td><td>character</td><td></td></tr>
+<tr><td>goals_team</td><td>integer</td><td></td></tr>
+<tr><td>goals_opponent</td><td>integer</td><td></td></tr>
+<tr><td>minutes_played</td><td>integer</td><td></td></tr>
+<tr><td>goals</td><td>integer</td><td></td></tr>
+<tr><td>assists</td><td>integer</td><td></td></tr>
+<tr><td>shots</td><td>integer</td><td></td></tr>
+<tr><td>shots_on_target</td><td>integer</td><td></td></tr>
+<tr><td>expected_goals_xg</td><td>numeric</td><td></td></tr>
+<tr><td>expected_assists_xa</td><td>numeric</td><td></td></tr>
+<tr><td>key_passes</td><td>integer</td><td></td></tr>
+<tr><td>successful_passes</td><td>integer</td><td></td></tr>
+<tr><td>total_passes</td><td>integer</td><td></td></tr>
+<tr><td>pass_accuracy</td><td>numeric</td><td></td></tr>
+<tr><td>dribbles_attempted</td><td>integer</td><td></td></tr>
+<tr><td>successful_dribbles</td><td>integer</td><td></td></tr>
+<tr><td>crosses</td><td>integer</td><td></td></tr>
+<tr><td>successful_crosses</td><td>integer</td><td></td></tr>
+<tr><td>tackles</td><td>integer</td><td></td></tr>
+<tr><td>interceptions</td><td>integer</td><td></td></tr>
+<tr><td>clearances</td><td>integer</td><td></td></tr>
+<tr><td>blocks</td><td>integer</td><td></td></tr>
+<tr><td>aerial_duels_won</td><td>integer</td><td></td></tr>
+<tr><td>aerial_duels_lost</td><td>integer</td><td></td></tr>
+<tr><td>recoveries</td><td>integer</td><td></td></tr>
+<tr><td>defensive_actions</td><td>integer</td><td></td></tr>
+<tr><td>fouls_committed</td><td>integer</td><td></td></tr>
+<tr><td>fouls_suffered</td><td>integer</td><td></td></tr>
+<tr><td>yellow_cards</td><td>integer</td><td></td></tr>
+<tr><td>red_cards</td><td>integer</td><td></td></tr>
+<tr><td>offsides</td><td>integer</td><td></td></tr>
+<tr><td>saves</td><td>integer</td><td></td></tr>
+<tr><td>save_percentage</td><td>numeric</td><td></td></tr>
+<tr><td>punches</td><td>integer</td><td></td></tr>
+<tr><td>clean_sheet</td><td>smallint</td><td></td></tr>
+<tr><td>goals_conceded</td><td>integer</td><td></td></tr>
+<tr><td>penalty_saves</td><td>integer</td><td></td></tr>
+<tr><td>distance_covered_km</td><td>numeric</td><td></td></tr>
+<tr><td>sprint_distance_km</td><td>numeric</td><td></td></tr>
+<tr><td>top_speed_kmh</td><td>numeric</td><td></td></tr>
+<tr><td>accelerations</td><td>integer</td><td></td></tr>
+<tr><td>decelerations</td><td>integer</td><td></td></tr>
+<tr><td>stamina_score</td><td>numeric</td><td></td></tr>
+<tr><td>player_rating</td><td>numeric</td><td></td></tr>
+<tr><td>performance_score</td><td>numeric</td><td></td></tr>
+<tr><td>offensive_contribution</td><td>numeric</td><td></td></tr>
+<tr><td>defensive_contribution</td><td>numeric</td><td></td></tr>
+<tr><td>possession_impact</td><td>numeric</td><td></td></tr>
+<tr><td>pressure_resistance</td><td>numeric</td><td></td></tr>
+<tr><td>creativity_score</td><td>numeric</td><td></td></tr>
+<tr><td>consistency_score</td><td>numeric</td><td></td></tr>
+<tr><td>clutch_performance_score</td><td>numeric</td><td></td></tr></tbody></table>
+</body></html>

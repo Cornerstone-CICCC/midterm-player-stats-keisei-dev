@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><title>players</title>
+<style>
+  body{font-family:ui-monospace,Menlo,monospace;padding:32px;background:#f8fafc;color:#0f172a}
+  h1{margin:0 0 8px;font-size:28px}
+  p{margin:0 0 20px;color:#334155;font-size:14px}
+  table{border-collapse:collapse;width:100%;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+  th,td{border:1px solid #cbd5e1;padding:8px 12px;text-align:left;font-size:13px}
+  th{background:#0f2744;color:#fff}
+  tr:nth-child(even){background:#f1f5f9}
+</style></head><body>
+<h1>Table: players</h1>
+<p>PK: player_id — one row per player (attributes that stay with the person)</p>
+<table><thead><tr><th>Column</th><th>Type</th><th>Nullable</th></tr></thead>
+<tbody><tr><td>player_id</td><td>text</td><td>NOT NULL</td></tr>
+<tr><td>player_name</td><td>text</td><td>NOT NULL</td></tr>
+<tr><td>age</td><td>integer</td><td></td></tr>
+<tr><td>nationality</td><td>text</td><td></td></tr>
+<tr><td>team</td><td>text</td><td></td></tr>
+<tr><td>jersey_number</td><td>integer</td><td></td></tr>
+<tr><td>position</td><td>text</td><td></td></tr>
+<tr><td>height_cm</td><td>integer</td><td></td></tr>
+<tr><td>weight_kg</td><td>integer</td><td></td></tr>
+<tr><td>preferred_foot</td><td>text</td><td></td></tr>
+<tr><td>club_name</td><td>text</td><td></td></tr>
+<tr><td>market_value_eur</td><td>bigint</td><td></td></tr>
+<tr><td>total_goals_tournament</td><td>integer</td><td></td></tr>
+<tr><td>total_assists_tournament</td><td>integer</td><td></td></tr>
+<tr><td>total_minutes_tournament</td><td>integer</td><td></td></tr>
+<tr><td>player_of_match_awards</td><td>integer</td><td></td></tr>
+<tr><td>tournament_rating</td><td>numeric</td><td></td></tr></tbody></table>
+</body></html>

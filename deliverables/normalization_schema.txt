@@ -1,0 +1,104 @@
+                       Table "public.players"
+          Column          |  Type   | Collation | Nullable | Default 
+--------------------------+---------+-----------+----------+---------
+ player_id                | text    |           | not null | 
+ player_name              | text    |           | not null | 
+ age                      | integer |           |          | 
+ nationality              | text    |           |          | 
+ team                     | text    |           |          | 
+ jersey_number            | integer |           |          | 
+ position                 | text    |           |          | 
+ height_cm                | integer |           |          | 
+ weight_kg                | integer |           |          | 
+ preferred_foot           | text    |           |          | 
+ club_name                | text    |           |          | 
+ market_value_eur         | bigint  |           |          | 
+ total_goals_tournament   | integer |           |          | 
+ total_assists_tournament | integer |           |          | 
+ total_minutes_tournament | integer |           |          | 
+ player_of_match_awards   | integer |           |          | 
+ tournament_rating        | numeric |           |          | 
+Indexes:
+    "players_pkey" PRIMARY KEY, btree (player_id)
+Referenced by:
+    TABLE "performances" CONSTRAINT "performances_player_id_fkey" FOREIGN KEY (player_id) REFERENCES players(player_id)
+
+                  Table "public.matches"
+      Column      | Type | Collation | Nullable | Default 
+------------------+------+-----------+----------+---------
+ match_id         | text |           | not null | 
+ match_date       | date |           |          | 
+ stadium          | text |           |          | 
+ city             | text |           |          | 
+ tournament_stage | text |           |          | 
+Indexes:
+    "matches_pkey" PRIMARY KEY, btree (match_id)
+Referenced by:
+    TABLE "performances" CONSTRAINT "performances_match_id_fkey" FOREIGN KEY (match_id) REFERENCES matches(match_id)
+
+                                        Table "public.performances"
+          Column          |     Type     | Collation | Nullable |                 Default                  
+--------------------------+--------------+-----------+----------+------------------------------------------
+ id                       | integer      |           | not null | nextval('performances_id_seq'::regclass)
+ player_id                | text         |           | not null | 
+ match_id                 | text         |           | not null | 
+ opponent_team            | text         |           |          | 
+ match_result             | character(1) |           |          | 
+ goals_team               | integer      |           |          | 
+ goals_opponent           | integer      |           |          | 
+ minutes_played           | integer      |           |          | 
+ goals                    | integer      |           |          | 
+ assists                  | integer      |           |          | 
+ shots                    | integer      |           |          | 
+ shots_on_target          | integer      |           |          | 
+ expected_goals_xg        | numeric      |           |          | 
+ expected_assists_xa      | numeric      |           |          | 
+ key_passes               | integer      |           |          | 
+ successful_passes        | integer      |           |          | 
+ total_passes             | integer      |           |          | 
+ pass_accuracy            | numeric      |           |          | 
+ dribbles_attempted       | integer      |           |          | 
+ successful_dribbles      | integer      |           |          | 
+ crosses                  | integer      |           |          | 
+ successful_crosses       | integer      |           |          | 
+ tackles                  | integer      |           |          | 
+ interceptions            | integer      |           |          | 
+ clearances               | integer      |           |          | 
+ blocks                   | integer      |           |          | 
+ aerial_duels_won         | integer      |           |          | 
+ aerial_duels_lost        | integer      |           |          | 
+ recoveries               | integer      |           |          | 
+ defensive_actions        | integer      |           |          | 
+ fouls_committed          | integer      |           |          | 
+ fouls_suffered           | integer      |           |          | 
+ yellow_cards             | integer      |           |          | 
+ red_cards                | integer      |           |          | 
+ offsides                 | integer      |           |          | 
+ saves                    | integer      |           |          | 
+ save_percentage          | numeric      |           |          | 
+ punches                  | integer      |           |          | 
+ clean_sheet              | smallint     |           |          | 
+ goals_conceded           | integer      |           |          | 
+ penalty_saves            | integer      |           |          | 
+ distance_covered_km      | numeric      |           |          | 
+ sprint_distance_km       | numeric      |           |          | 
+ top_speed_kmh            | numeric      |           |          | 
+ accelerations            | integer      |           |          | 
+ decelerations            | integer      |           |          | 
+ stamina_score            | numeric      |           |          | 
+ player_rating            | numeric      |           |          | 
+ performance_score        | numeric      |           |          | 
+ offensive_contribution   | numeric      |           |          | 
+ defensive_contribution   | numeric      |           |          | 
+ possession_impact        | numeric      |           |          | 
+ pressure_resistance      | numeric      |           |          | 
+ creativity_score         | numeric      |           |          | 
+ consistency_score        | numeric      |           |          | 
+ clutch_performance_score | numeric      |           |          | 
+Indexes:
+    "performances_pkey" PRIMARY KEY, btree (id)
+    "performances_player_id_match_id_key" UNIQUE CONSTRAINT, btree (player_id, match_id)
+Foreign-key constraints:
+    "performances_match_id_fkey" FOREIGN KEY (match_id) REFERENCES matches(match_id)
+    "performances_player_id_fkey" FOREIGN KEY (player_id) REFERENCES players(player_id)
+
