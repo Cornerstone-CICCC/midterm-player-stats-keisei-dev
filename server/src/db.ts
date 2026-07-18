@@ -17,6 +17,6 @@ pool.on("error", (err) => {
 });
 
 // Wrapper to keep every caller on parameterized queries ($1, $2, ...).
-export function query(text, params) {
+export function query(text: string, params?: unknown[]) {
   return pool.query(text, params);
 }

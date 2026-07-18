@@ -86,15 +86,15 @@ textarea {
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.65rem;
 }
 
 .nav a {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: 10px;
+  padding: 0.95rem 1.1rem;
+  border-radius: 12px;
   color: #c9d7ef;
 }
 
@@ -162,6 +162,13 @@ textarea {
   border-bottom: 1px solid var(--border);
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.controls form {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: auto;
 }
 
 .table-wrap {
@@ -254,7 +261,7 @@ tbody tr:hover {
   gap: 0.35rem;
   border: 1px solid transparent;
   border-radius: 10px;
-  padding: 0.55rem 0.95rem;
+  padding: 0.7rem 1.15rem;
   cursor: pointer;
   background: white;
   color: var(--text);
@@ -304,27 +311,54 @@ tbody tr:hover {
   border-color: var(--blue);
 }
 
+/* Custom chevron so text and arrow stay balanced */
+.select-sm,
+.select-md {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: white;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M3 4.5L6 8l3-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.55rem center;
+  background-size: 0.75rem;
+  padding: 0.45rem 1.7rem 0.45rem 0.65rem;
+}
+
+.select-sm {
+  width: 4.5rem;
+  min-width: 4.5rem;
+  max-width: 4.5rem;
+}
+
+.select-md {
+  width: 11rem;
+  min-width: 11rem;
+  max-width: 11rem;
+}
+
 .search {
   min-width: 220px;
 }
 
 .pagination {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.5rem;
   align-items: center;
+  margin-top: 0.45rem;
 }
 
 .page-link {
-  min-width: 2rem;
-  height: 2rem;
+  min-width: 2.4rem;
+  height: 2.4rem;
+  padding: 0 0.45rem;
   display: inline-grid;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: white;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .page-link.active {
@@ -397,9 +431,14 @@ tbody tr:hover {
 .filters-panel label {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.4rem;
   font-size: 0.82rem;
   color: var(--muted);
+  width: auto;
+}
+
+.filters-panel .select {
+  width: 11rem;
 }
 
 .empty {

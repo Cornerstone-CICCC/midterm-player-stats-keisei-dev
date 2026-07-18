@@ -123,7 +123,7 @@ for (let i = start; i <= end; i++) pageNumbers.push(i);
       <input type="hidden" name="order" value={order} />
       <label>
         Position
-        <select class="select" name="position">
+        <select class="select select-md" name="position">
           <option value="">All</option>
           {filters.positions.map((p) => (
             <option value={p} selected={p === position}>{p}</option>
@@ -132,7 +132,7 @@ for (let i = start; i <= end; i++) pageNumbers.push(i);
       </label>
       <label>
         Team
-        <select class="select" name="team">
+        <select class="select select-md" name="team">
           <option value="">All</option>
           {filters.teams.map((t) => (
             <option value={t} selected={t === team}>{t}</option>
@@ -152,7 +152,7 @@ for (let i = start; i <= end; i++) pageNumbers.push(i);
         <input type="hidden" name="sort" value={sort} />
         <input type="hidden" name="order" value={order} />
         Show
-        <select class="select" name="pageSize" onchange="this.form.submit()">
+        <select class="select select-sm" name="pageSize" onchange="this.form.submit()">
           {(list?.pageSizeOptions || [10, 25, 50, 100]).map((n) => (
             <option value={n} selected={String(n) === String(pageSize)}>{n}</option>
           ))}

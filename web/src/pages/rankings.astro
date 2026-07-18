@@ -41,7 +41,7 @@ function ratingClass(rating) {
     <form method="get" action="/rankings" class="toolbar">
       <label class="meta">
         Sort by
-        <select class="select" name="sort" onchange="this.form.submit()">
+        <select class="select select-md" name="sort" onchange="this.form.submit()">
           {(rankings?.sortOptions || ["goals", "assists", "rating"]).map((opt) => (
             <option value={opt} selected={opt === sort}>
               {opt.charAt(0).toUpperCase() + opt.slice(1)}
@@ -51,7 +51,7 @@ function ratingClass(rating) {
       </label>
       <label class="meta">
         Show
-        <select class="select" name="limit" onchange="this.form.submit()">
+        <select class="select select-sm" name="limit" onchange="this.form.submit()">
           {[10, 25, 50, 100].map((n) => (
             <option value={n} selected={String(n) === String(limit)}>{n}</option>
           ))}

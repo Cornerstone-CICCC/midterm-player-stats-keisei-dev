@@ -19,13 +19,17 @@ app.use(express.json());
 app.use("/api/performances", performancesRouter);
 app.use("/api/rankings", rankingsRouter);
 
-app.get("/api/health", (req, res) => {
+app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", service: "player-stats-api" });
 });
 
-app.get("/api/health/db", async (req, res) => {
+app.get("/api/health/db", async (_req, res) => {
   try {
-    const { rows } = await pool.query(
+    const { rows } = await pool.query<{
+      players: string;
+      matches: string;
+      performances: string;
+    }>(
       `SELECT
          (SELECT COUNT(*) FROM players)      AS players,
          (SELECT COUNT(*) FROM matches)      AS matches,
@@ -38,7 +42,7 @@ app.get("/api/health/db", async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 3000;
+const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => {
   console.log(`API listening on http://localhost:${port}`);
 });

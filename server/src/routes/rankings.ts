@@ -1,4 +1,5 @@
 import { Router } from "express";
+import type { Request } from "express";
 import { pool } from "../db.js";
 
 export const rankingsRouter = Router();
@@ -7,18 +8,25 @@ const SORTABLE = {
   goals: "total_goals",
   assists: "total_assists",
   rating: "avg_rating",
-};
+} as const;
+
+type SortKey = keyof typeof SORTABLE;
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
 
+function queryString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
 // GET /api/rankings?sort=goals&limit=25
-// Per-player aggregates via JOIN + GROUP BY (SUM / COUNT / AVG).
-rankingsRouter.get("/", async (req, res) => {
-  const sortKey = SORTABLE[req.query.sort] ? req.query.sort : "goals";
+rankingsRouter.get("/", async (req: Request, res) => {
+  const requestedSort = queryString(req.query.sort);
+  const sortKey: SortKey =
+    requestedSort in SORTABLE ? (requestedSort as SortKey) : "goals";
   const sortColumn = SORTABLE[sortKey];
 
-  let limit = Number.parseInt(req.query.limit, 10);
+  let limit = Number.parseInt(queryString(req.query.limit), 10);
   if (!Number.isInteger(limit) || limit < 1) limit = DEFAULT_LIMIT;
   if (limit > MAX_LIMIT) limit = MAX_LIMIT;
 

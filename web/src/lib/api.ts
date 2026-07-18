@@ -1,6 +1,9 @@
 const API_BASE = import.meta.env.PUBLIC_API_BASE_URL || "http://localhost:3000";
 
-export function apiUrl(path, params) {
+export function apiUrl(
+  path: string,
+  params?: Record<string, string | number | undefined | null>
+) {
   const url = new URL(path, API_BASE);
   if (params) {
     for (const [key, value] of Object.entries(params)) {
@@ -12,7 +15,10 @@ export function apiUrl(path, params) {
   return url.toString();
 }
 
-export async function apiGet(path, params) {
+export async function apiGet(
+  path: string,
+  params?: Record<string, string | number | undefined | null>
+) {
   const res = await fetch(apiUrl(path, params));
   if (!res.ok) {
     throw new Error(`API error ${res.status}`);

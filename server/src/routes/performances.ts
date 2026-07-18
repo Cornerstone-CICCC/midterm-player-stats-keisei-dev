@@ -1,12 +1,12 @@
 import { Router } from "express";
+import type { Request } from "express";
 import { pool } from "../db.js";
 
 export const performancesRouter = Router();
 
-const ALLOWED_PAGE_SIZES = [10, 25, 50, 100];
+const ALLOWED_PAGE_SIZES = [10, 25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
-// Sort column can't be a bind param — only keys from this map are ever interpolated.
 const SORTABLE_COLUMNS = {
   id: "pf.id",
   player_name: "p.player_name",
@@ -17,28 +17,9 @@ const SORTABLE_COLUMNS = {
   assists: "pf.assists",
   minutes_played: "pf.minutes_played",
   player_rating: "pf.player_rating",
-};
+} as const;
 
-function buildFilters(query) {
-  const conditions = [];
-  const params = [];
-
-  if (query.q && query.q.trim() !== "") {
-    params.push(`%${query.q.trim()}%`);
-    conditions.push(`p.player_name ILIKE $${params.length}`);
-  }
-  if (query.position && query.position.trim() !== "") {
-    params.push(query.position.trim());
-    conditions.push(`p.position = $${params.length}`);
-  }
-  if (query.team && query.team.trim() !== "") {
-    params.push(query.team.trim());
-    conditions.push(`p.team = $${params.length}`);
-  }
-
-  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-  return { where, params };
-}
+type SortKey = keyof typeof SORTABLE_COLUMNS;
 
 const EDITABLE_FIELDS = [
   "opponent_team",
@@ -49,11 +30,43 @@ const EDITABLE_FIELDS = [
   "shots",
   "shots_on_target",
   "player_rating",
-];
+] as const;
 
-function pickEditable(body) {
-  const fields = [];
-  const values = [];
+type EditableField = (typeof EDITABLE_FIELDS)[number];
+
+function queryString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function buildFilters(query: Request["query"]) {
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+
+  const q = queryString(query.q).trim();
+  if (q !== "") {
+    params.push(`%${q}%`);
+    conditions.push(`p.player_name ILIKE $${params.length}`);
+  }
+
+  const position = queryString(query.position).trim();
+  if (position !== "") {
+    params.push(position);
+    conditions.push(`p.position = $${params.length}`);
+  }
+
+  const team = queryString(query.team).trim();
+  if (team !== "") {
+    params.push(team);
+    conditions.push(`p.team = $${params.length}`);
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  return { where, params };
+}
+
+function pickEditable(body: Record<string, unknown>) {
+  const fields: EditableField[] = [];
+  const values: unknown[] = [];
   for (const key of EDITABLE_FIELDS) {
     if (body[key] !== undefined) {
       fields.push(key);
@@ -63,13 +76,17 @@ function pickEditable(body) {
   return { fields, values };
 }
 
-// GET /api/performances/filters — distinct values for dropdowns
-performancesRouter.get("/filters", async (req, res) => {
+function isPgError(err: unknown): err is { code?: string } {
+  return typeof err === "object" && err !== null && "code" in err;
+}
+
+// GET /api/performances/filters
+performancesRouter.get("/filters", async (_req, res) => {
   try {
-    const positions = await pool.query(
+    const positions = await pool.query<{ position: string }>(
       "SELECT DISTINCT position FROM players WHERE position IS NOT NULL ORDER BY position"
     );
-    const teams = await pool.query(
+    const teams = await pool.query<{ team: string }>(
       "SELECT DISTINCT team FROM players WHERE team IS NOT NULL ORDER BY team"
     );
     res.json({
@@ -82,23 +99,26 @@ performancesRouter.get("/filters", async (req, res) => {
   }
 });
 
-// GET /api/performances?page=&pageSize=&q=&position=&team=&sort=&order=
+// GET /api/performances
 performancesRouter.get("/", async (req, res) => {
-  const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-  const requestedSize = Number.parseInt(req.query.pageSize, 10);
-  const pageSize = ALLOWED_PAGE_SIZES.includes(requestedSize)
+  const page = Math.max(1, Number.parseInt(queryString(req.query.page), 10) || 1);
+  const requestedSize = Number.parseInt(queryString(req.query.pageSize), 10);
+  const pageSize = (ALLOWED_PAGE_SIZES as readonly number[]).includes(requestedSize)
     ? requestedSize
     : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * pageSize;
 
-  const sortColumn = SORTABLE_COLUMNS[req.query.sort] || SORTABLE_COLUMNS.id;
+  const requestedSort = queryString(req.query.sort);
+  const sortKey: SortKey =
+    requestedSort in SORTABLE_COLUMNS ? (requestedSort as SortKey) : "id";
+  const sortColumn = SORTABLE_COLUMNS[sortKey];
   const sortOrder =
-    String(req.query.order).toLowerCase() === "desc" ? "DESC" : "ASC";
+    queryString(req.query.order).toLowerCase() === "desc" ? "DESC" : "ASC";
 
   const { where, params } = buildFilters(req.query);
 
   try {
-    const totalResult = await pool.query(
+    const totalResult = await pool.query<{ total: number }>(
       `SELECT COUNT(*)::int AS total
        FROM performances pf
        JOIN players p ON p.player_id = pf.player_id
@@ -139,9 +159,7 @@ performancesRouter.get("/", async (req, res) => {
       total,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
       pageSizeOptions: ALLOWED_PAGE_SIZES,
-      sort: Object.keys(SORTABLE_COLUMNS).find(
-        (k) => SORTABLE_COLUMNS[k] === sortColumn
-      ),
+      sort: sortKey,
       order: sortOrder.toLowerCase(),
     });
   } catch (err) {
@@ -180,12 +198,15 @@ performancesRouter.get("/:id", async (req, res) => {
 
 // POST /api/performances
 performancesRouter.post("/", async (req, res) => {
-  const { player_id, match_id } = req.body;
+  const { player_id, match_id } = req.body as {
+    player_id?: string;
+    match_id?: string;
+  };
   if (!player_id || !match_id) {
     return res.status(400).json({ error: "player_id and match_id are required" });
   }
 
-  const { fields, values } = pickEditable(req.body);
+  const { fields, values } = pickEditable(req.body as Record<string, unknown>);
   const columns = ["player_id", "match_id", ...fields];
   const allValues = [player_id, match_id, ...values];
   const placeholders = allValues.map((_, i) => `$${i + 1}`);
@@ -199,10 +220,10 @@ performancesRouter.post("/", async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    if (err.code === "23503") {
+    if (isPgError(err) && err.code === "23503") {
       return res.status(400).json({ error: "Unknown player_id or match_id" });
     }
-    if (err.code === "23505") {
+    if (isPgError(err) && err.code === "23505") {
       return res
         .status(409)
         .json({ error: "This player already has a row for that match" });
@@ -219,7 +240,7 @@ performancesRouter.put("/:id", async (req, res) => {
     return res.status(400).json({ error: "Invalid id" });
   }
 
-  const { fields, values } = pickEditable(req.body);
+  const { fields, values } = pickEditable(req.body as Record<string, unknown>);
   if (fields.length === 0) {
     return res.status(400).json({ error: "No editable fields provided" });
   }
